@@ -5,9 +5,9 @@ module Main exposing (main)
 
 import Browser
 import Debug
-import Html exposing (Html, div, input, option, select, text)
+import Html exposing (Html, button, div, input, label, option, select, text)
 import Html.Attributes exposing (placeholder, type_, value)
-import Html.Events exposing (onInput)
+import Html.Events exposing (onClick, onInput)
 
 
 
@@ -84,6 +84,7 @@ init =
 type Msg
     = Name String
     | Color Color
+    | Submit
 
 
 update : Msg -> Model -> Model
@@ -94,6 +95,9 @@ update msg model =
 
         Color color ->
             { model | color = color }
+
+        Submit ->
+            model
 
 
 
@@ -108,10 +112,7 @@ items =
 viewBuild : Model -> Html Msg
 viewBuild model =
     div []
-        [ text "Name: "
-        , viewInputName "text" "Name: " model.name Name
-        , text "Color: "
-        , viewSelectColor Color
+        [ viewForm model
         ]
 
 
@@ -127,6 +128,15 @@ createOption color =
             colorToString color
     in
     option [ value colorString ] [ text colorString ]
+
+
+viewForm : Model -> Html Msg
+viewForm model =
+    div []
+        [ label [] [ text "Name: ", viewInputName "text" "Name: " model.name Name ]
+        , label [] [ text "Color: ", viewSelectColor Color ]
+        , button [ onClick Submit ] [ text "Submit" ]
+        ]
 
 
 viewSelectOption : List Color -> List (Html msg)
