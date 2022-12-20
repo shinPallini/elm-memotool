@@ -4,6 +4,7 @@
 module Main exposing (main)
 
 import Browser
+import Debug
 import Html exposing (Html, div, input, option, select, text)
 import Html.Attributes exposing (placeholder, type_, value)
 import Html.Events exposing (onInput)
@@ -138,10 +139,14 @@ viewSelectColor toMsg =
     select [ onInput (colorFromString >> toMsg) ] (viewSelectOption items)
 
 
+viewDebugLog : Model -> Html msg
+viewDebugLog model =
+    div [] [ text (Debug.toString model) ]
+
+
 view : Model -> Html Msg
 view model =
     div []
         [ viewBuild model
-        , div [] [ text ("Name: " ++ model.name) ]
-        , div [] [ text ("Color: " ++ colorToString model.color) ]
+        , viewDebugLog model
         ]
