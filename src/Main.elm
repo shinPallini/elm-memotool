@@ -77,7 +77,7 @@ type alias Model =
 init : Model
 init =
     { addPlayer =
-        { name = "", color = NoMatch }
+        { name = "", color = Red }
     , playerList = []
     }
 
