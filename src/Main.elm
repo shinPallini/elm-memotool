@@ -8,6 +8,7 @@ import Debug
 import Html exposing (Html, button, div, input, label, option, select, text)
 import Html.Attributes exposing (placeholder, type_, value)
 import Html.Events exposing (onClick, onInput)
+import List
 
 
 
@@ -116,7 +117,20 @@ update msg model =
             { model | addPlayer = newAddPlayer }
 
         Submit ->
-            model
+            let
+                playerList =
+                    model.playerList
+
+                newPlayerList =
+                    List.append playerList [ model.addPlayer ]
+
+                initAddPlayer =
+                    { name = "", color = Red }
+            in
+            { model
+                | addPlayer = initAddPlayer
+                , playerList = newPlayerList
+            }
 
 
 
