@@ -69,12 +69,17 @@ type alias Player =
 
 
 type alias Model =
-    Player
+    { addPlayer : Player
+    , playerList : List Player
+    }
 
 
 init : Model
 init =
-    { name = "", color = NoMatch }
+    { addPlayer =
+        { name = "", color = NoMatch }
+    , playerList = []
+    }
 
 
 
@@ -91,10 +96,24 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         Name name ->
-            { model | name = name }
+            let
+                player =
+                    model.addPlayer
+
+                newAddPlayer =
+                    { player | name = name }
+            in
+            { model | addPlayer = newAddPlayer }
 
         Color color ->
-            { model | color = color }
+            let
+                player =
+                    model.addPlayer
+
+                newAddPlayer =
+                    { player | color = color }
+            in
+            { model | addPlayer = newAddPlayer }
 
         Submit ->
             model
@@ -133,7 +152,7 @@ createOption color =
 viewForm : Model -> Html Msg
 viewForm model =
     div []
-        [ label [] [ text "Name: ", viewInputName "text" "Name: " model.name Name ]
+        [ label [] [ text "Name: ", viewInputName "text" "Name: " model.addPlayer.name Name ]
         , label [] [ text "Color: ", viewSelectColor Color ]
         , button [ onClick Submit ] [ text "Submit" ]
         ]
