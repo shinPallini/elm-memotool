@@ -9,6 +9,7 @@ import Html exposing (Attribute, Html, button, div, input, label, option, select
 import Html.Attributes exposing (disabled, placeholder, type_, value)
 import Html.Events exposing (onClick, onInput)
 import List
+import MySvg exposing (roundRect)
 
 
 
@@ -206,4 +207,5 @@ view model =
     div []
         [ viewBuild model
         , viewDebugLog model
+        , roundRect
         ]
