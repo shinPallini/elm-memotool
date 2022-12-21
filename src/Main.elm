@@ -6,7 +6,7 @@ module Main exposing (main)
 import Browser
 import Debug
 import Html exposing (Attribute, Html, button, div, input, label, option, select, text)
-import Html.Attributes exposing (disabled, placeholder, type_, value)
+import Html.Attributes exposing (disabled, placeholder, style, type_, value)
 import Html.Events exposing (onClick, onInput)
 import List
 import MySvg exposing (roundRect)
@@ -158,10 +158,11 @@ viewInputName t p v toMsg =
 createOption : Color -> Html msg
 createOption color =
     let
+        colorString : String
         colorString =
             colorToString color
     in
-    option [ value colorString ] [ text colorString ]
+    option [ value colorString, style "color" (String.toLower colorString) ] [ text colorString ]
 
 
 viewSubmitButton : Player -> Html Msg
@@ -182,7 +183,7 @@ viewForm : Model -> Html Msg
 viewForm model =
     div []
         [ label [] [ text "Name: ", viewInputName "text" "Name: " model.addPlayer.name Name ]
-        , label [] [ text "Color: ", viewSelectColor Color ]
+        , label [] [ text "Color: ", viewSelectColor model Color ]
         , viewSubmitButton model.addPlayer
         ]
 
@@ -192,9 +193,9 @@ viewSelectOption list =
     List.map createOption list
 
 
-viewSelectColor : (Color -> Msg) -> Html Msg
-viewSelectColor toMsg =
-    select [ onInput (colorFromString >> toMsg) ] (viewSelectOption items)
+viewSelectColor : Model -> (Color -> Msg) -> Html Msg
+viewSelectColor model toMsg =
+    select [ onInput (colorFromString >> toMsg), style "color" (colorToString model.addPlayer.color |> String.toLower) ] (viewSelectOption items)
 
 
 viewDebugLog : Model -> Html msg
