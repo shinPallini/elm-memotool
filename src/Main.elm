@@ -140,7 +140,7 @@ update msg model =
 
 items : List Color
 items =
-    [ Red, Blue, Green, NoMatch ]
+    [ Red, Blue, Green ]
 
 
 viewBuild : Model -> Html Msg
