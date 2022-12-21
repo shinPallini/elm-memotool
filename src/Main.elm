@@ -5,8 +5,8 @@ module Main exposing (main)
 
 import Browser
 import Debug
-import Html exposing (Html, button, div, input, label, option, select, text)
-import Html.Attributes exposing (placeholder, type_, value)
+import Html exposing (Attribute, Html, button, div, input, label, option, select, text)
+import Html.Attributes exposing (disabled, placeholder, type_, value)
 import Html.Events exposing (onClick, onInput)
 import List
 
@@ -163,12 +163,26 @@ createOption color =
     option [ value colorString ] [ text colorString ]
 
 
+viewSubmitButton : Player -> Html Msg
+viewSubmitButton addPlayer =
+    let
+        changeButtonDisabled =
+            case addPlayer.name of
+                "" ->
+                    [ onClick Submit, disabled True ]
+
+                _ ->
+                    [ onClick Submit ]
+    in
+    button changeButtonDisabled [ text "Submit" ]
+
+
 viewForm : Model -> Html Msg
 viewForm model =
     div []
         [ label [] [ text "Name: ", viewInputName "text" "Name: " model.addPlayer.name Name ]
         , label [] [ text "Color: ", viewSelectColor Color ]
-        , button [ onClick Submit ] [ text "Submit" ]
+        , viewSubmitButton model.addPlayer
         ]
 
 
