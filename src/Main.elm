@@ -183,7 +183,7 @@ viewForm : Model -> Html Msg
 viewForm model =
     div []
         [ label [] [ text "Name: ", viewInputName "text" "Name: " model.addPlayer.name Name ]
-        , label [] [ text "Color: ", viewSelectColor model Color ]
+        , label [] [ text "Color: ", viewSelectColor Color ]
         , viewSubmitButton model.addPlayer
         ]
 
@@ -193,9 +193,9 @@ viewSelectOption list =
     List.map createOption list
 
 
-viewSelectColor : Model -> (Color -> Msg) -> Html Msg
-viewSelectColor model toMsg =
-    select [ onInput (colorFromString >> toMsg), style "color" (colorToString model.addPlayer.color |> String.toLower) ] (viewSelectOption items)
+viewSelectColor : (Color -> Msg) -> Html Msg
+viewSelectColor toMsg =
+    select [ onInput (colorFromString >> toMsg) ] (viewSelectOption items)
 
 
 viewDebugLog : Model -> Html msg
