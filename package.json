@@ -7,10 +7,14 @@
     "elm": "^0.19.1-5"
   },
   "devDependencies": {
+    "@parcel/transformer-sass": "^2.8.2",
     "elm-format": "^0.8.5",
     "elm-hot": "^1.1.6",
     "node-elm-compiler": "^5.0.6",
     "parcel": "^2.8.2",
     "parcel-bundler": "^1.12.5"
+  },
+  "scripts": {
+    "start": "parcel index.html -p 8080"
   }
 }
