@@ -5,7 +5,7 @@ module Main exposing (main)
 
 import Browser
 import Debug
-import Html exposing (Attribute, Html, button, div, input, label, option, select, text)
+import Html exposing (Attribute, Html, button, div, input, label, option, select, table, td, text, th, thead, tr)
 import Html.Attributes exposing (disabled, placeholder, style, type_, value)
 import Html.Events exposing (onClick, onInput)
 import List
@@ -138,6 +138,17 @@ update msg model =
 -- VIEW
 
 
+view : Model -> Html Msg
+view model =
+    div []
+        [ viewBuild model
+
+        -- , viewDebugLog model
+        , viewPlayerTable model
+        , roundRect
+        ]
+
+
 items : List Color
 items =
     [ Red, Blue, Green ]
@@ -198,15 +209,40 @@ viewSelectColor toMsg =
     select [ onInput (colorFromString >> toMsg) ] (viewSelectOption items)
 
 
-viewDebugLog : Model -> Html msg
-viewDebugLog model =
-    div [] [ text (Debug.toString model) ]
+
+-- TABLE
 
 
-view : Model -> Html Msg
-view model =
-    div []
-        [ viewBuild model
-        , viewDebugLog model
-        , roundRect
-        ]
+viewPlayerTable : Model -> Html msg
+viewPlayerTable model =
+    playerTable model
+
+
+playerTable : Model -> Html msg
+playerTable model =
+    let
+        header =
+            thead []
+                [ tr []
+                    [ th []
+                        [ text "プレイヤー名" ]
+                    , th []
+                        [ text "キャラ色" ]
+                    , th []
+                        [ text "湧き位置" ]
+                    , th []
+                        [ text "最終位置" ]
+                    ]
+                ]
+    in
+    table [] (header :: playerRow model)
+
+
+playerRow : Model -> List (Html msg)
+playerRow model =
+    List.map convertRow model.playerList
+
+
+convertRow : Player -> Html msg
+convertRow player =
+    tr [] [ td [] [ text player.name ], td [] [ text (colorToString player.color) ] ]
