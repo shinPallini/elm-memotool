@@ -7,7 +7,7 @@ import Browser
 import Debug
 import Html exposing (Attribute, Html, button, datalist, div, input, label, option, select, table, td, text, th, thead, tr)
 import Html.Attributes exposing (disabled, id, list, placeholder, style, type_, value)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onCheck, onClick, onInput)
 import List
 import MySvg exposing (roundRect)
 
@@ -67,6 +67,7 @@ colorFromString string =
 type alias Player =
     { name : String
     , color : Color
+    , dead : Bool
     , popPosition : String
     , stopPosition : String
     }
@@ -83,6 +84,7 @@ init =
     { addPlayer =
         { name = ""
         , color = Red
+        , dead = False
         , popPosition = ""
         , stopPosition = ""
         }
@@ -100,6 +102,7 @@ type Msg
     | Submit
     | PopPosition Player Position
     | StopPosition Player Position
+    | Dead Player Bool
 
 
 type alias Position =
@@ -140,6 +143,7 @@ update msg model =
                 initAddPlayer =
                     { name = ""
                     , color = Red
+                    , dead = False
                     , popPosition = ""
                     , stopPosition = ""
                     }
@@ -154,6 +158,9 @@ update msg model =
 
         StopPosition player position ->
             { model | playerList = updateStopPosition player position model.playerList }
+
+        Dead player bool ->
+            { model | playerList = updateDead player bool model.playerList }
 
 
 updatePopPosition : Player -> Position -> List Player -> List Player
@@ -179,6 +186,20 @@ updatePlayerStopPosition : Player -> Position -> Player -> Player
 updatePlayerStopPosition changePlayer position inputPlayer =
     if changePlayer.name == inputPlayer.name then
         { inputPlayer | stopPosition = position }
+
+    else
+        inputPlayer
+
+
+updateDead : Player -> Bool -> List Player -> List Player
+updateDead player bool playerList =
+    List.map (updatePlayerDead player bool) playerList
+
+
+updatePlayerDead : Player -> Bool -> Player -> Player
+updatePlayerDead changePlayer bool inputPlayer =
+    if changePlayer.name == inputPlayer.name then
+        { inputPlayer | dead = bool }
 
     else
         inputPlayer
@@ -272,6 +293,7 @@ viewPlayerTable model =
     div []
         [ playerTable model
         , positionDataList
+        , popPositionDataList
         ]
 
 
@@ -286,9 +308,13 @@ playerTable model =
                     , th []
                         [ text "キャラ色" ]
                     , th []
+                        [ text "キルされた" ]
+                    , th []
                         [ text "湧き位置" ]
                     , th []
                         [ text "最終位置" ]
+                    , th []
+                        [ text "容疑者候補" ]
                     ]
                 ]
     in
@@ -305,8 +331,10 @@ convertRow player =
     tr []
         [ td [] [ text player.name ]
         , td [] [ text (colorToString player.color) ]
-        , td [] [ input [ list "airship", onInput (PopPosition player) ] [] ]
+        , td [] [ input [ type_ "checkbox", onCheck <| Dead player ] [] ]
+        , td [] [ input [ list "pop_airship", onInput (PopPosition player) ] [] ]
         , td [] [ input [ list "airship", onInput (StopPosition player) ] [] ]
+        , td [] [ select [] suspectOption ]
         ]
 
 
@@ -334,6 +362,22 @@ airship =
     ]
 
 
+popAirship : List String
+popAirship =
+    [ "宿舎前"
+    , "エンジンルーム"
+    , "キッチン"
+    , "メインルーム"
+    , "アーカイブ"
+    , "貨物室"
+    ]
+
+
+popPositionDataList : Html msg
+popPositionDataList =
+    datalist [ id "pop_airship" ] (airshipOption popAirship)
+
+
 positionDataList : Html msg
 positionDataList =
     datalist [ id "airship" ] (airshipOption airship)
@@ -342,3 +386,13 @@ positionDataList =
 airshipOption : List String -> List (Html msg)
 airshipOption list =
     List.map (\s -> option [] [ text s ]) list
+
+
+suspectOption : List (Html msg)
+suspectOption =
+    let
+        list : List Int
+        list =
+            [ 0, 1, 2, 3 ]
+    in
+    List.map (\n -> option [] [ text <| String.fromInt n ]) list
