@@ -67,6 +67,8 @@ colorFromString string =
 type alias Player =
     { name : String
     , color : Color
+    , popPosition : String
+    , stopPosition : String
     }
 
 
@@ -79,7 +81,11 @@ type alias Model =
 init : Model
 init =
     { addPlayer =
-        { name = "", color = Red }
+        { name = ""
+        , color = Red
+        , popPosition = ""
+        , stopPosition = ""
+        }
     , playerList = []
     }
 
@@ -92,6 +98,12 @@ type Msg
     = Name String
     | Color Color
     | Submit
+    | PopPosition Player Position
+    | StopPosition Player Position
+
+
+type alias Position =
+    String
 
 
 update : Msg -> Model -> Model
@@ -126,12 +138,50 @@ update msg model =
                     List.append playerList [ model.addPlayer ]
 
                 initAddPlayer =
-                    { name = "", color = Red }
+                    { name = ""
+                    , color = Red
+                    , popPosition = ""
+                    , stopPosition = ""
+                    }
             in
             { model
                 | addPlayer = initAddPlayer
                 , playerList = newPlayerList
             }
+
+        PopPosition player position ->
+            { model | playerList = updatePopPosition player position model.playerList }
+
+        StopPosition player position ->
+            { model | playerList = updateStopPosition player position model.playerList }
+
+
+updatePopPosition : Player -> Position -> List Player -> List Player
+updatePopPosition player position playerList =
+    List.map (updatePlayerPopPosition player position) playerList
+
+
+updatePlayerPopPosition : Player -> Position -> Player -> Player
+updatePlayerPopPosition changePlayer position inputPlayer =
+    if changePlayer.name == inputPlayer.name then
+        { inputPlayer | popPosition = position }
+
+    else
+        inputPlayer
+
+
+updateStopPosition : Player -> Position -> List Player -> List Player
+updateStopPosition player position playerList =
+    List.map (updatePlayerStopPosition player position) playerList
+
+
+updatePlayerStopPosition : Player -> Position -> Player -> Player
+updatePlayerStopPosition changePlayer position inputPlayer =
+    if changePlayer.name == inputPlayer.name then
+        { inputPlayer | stopPosition = position }
+
+    else
+        inputPlayer
 
 
 
@@ -142,11 +192,15 @@ view : Model -> Html Msg
 view model =
     div []
         [ viewBuild model
-
-        -- , viewDebugLog model
+        , viewDebugLog model
         , viewPlayerTable model
         , roundRect
         ]
+
+
+viewDebugLog : Model -> Html msg
+viewDebugLog model =
+    text <| Debug.toString model
 
 
 items : List Color
@@ -213,12 +267,12 @@ viewSelectColor toMsg =
 -- TABLE
 
 
-viewPlayerTable : Model -> Html msg
+viewPlayerTable : Model -> Html Msg
 viewPlayerTable model =
     playerTable model
 
 
-playerTable : Model -> Html msg
+playerTable : Model -> Html Msg
 playerTable model =
     let
         header =
@@ -238,11 +292,20 @@ playerTable model =
     table [] (header :: playerRow model)
 
 
-playerRow : Model -> List (Html msg)
+playerRow : Model -> List (Html Msg)
 playerRow model =
     List.map convertRow model.playerList
 
 
-convertRow : Player -> Html msg
+convertRow : Player -> Html Msg
 convertRow player =
-    tr [] [ td [] [ text player.name ], td [] [ text (colorToString player.color) ] ]
+    tr []
+        [ td [] [ text player.name ]
+        , td [] [ text (colorToString player.color) ]
+        , td [] [ input [ onInput (PopPosition player) ] [] ]
+        , td [] [ input [ onInput (StopPosition player) ] [] ]
+        ]
+
+
+
+-- positionInputForm : Html Msg
