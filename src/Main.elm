@@ -5,7 +5,7 @@ module Main exposing (main)
 
 import Browser
 import Debug
-import Html exposing (Attribute, Html, button, datalist, div, input, label, option, select, table, td, text, th, thead, tr)
+import Html exposing (Attribute, Html, button, datalist, div, h1, h2, h3, hr, input, label, li, ol, option, p, select, table, td, text, th, thead, tr, ul)
 import Html.Attributes exposing (disabled, id, list, placeholder, style, type_, value)
 import Html.Events exposing (onCheck, onClick, onInput)
 import List
@@ -213,9 +213,10 @@ view : Model -> Html Msg
 view model =
     div []
         [ viewBuild model
+        , hr [] []
         , viewDebugLog model
-        , viewPlayerTable model
-        , roundRect
+
+        -- , roundRect
         ]
 
 
@@ -232,7 +233,38 @@ items =
 viewBuild : Model -> Html Msg
 viewBuild model =
     div []
-        [ viewForm model
+        [ h1 [] [ text "Among us情報記録用メモ" ]
+        , viewForm model
+        , hr [] []
+        , h2 [] [ text "盤面情報" ]
+        , h3 [] [ text "キルされたプレイヤー" ]
+        , viewKilledPlayer model
+        , h3 [] [ text "各プレイヤーの情報" ]
+        , viewPlayerTable model
+        ]
+
+
+viewKilledPlayer : Model -> Html msg
+viewKilledPlayer model =
+    let
+        deadPlayers =
+            List.filter .dead model.playerList
+    in
+    ol [] (List.map viewPlayerName deadPlayers)
+
+
+
+-- text <| Debug.toString deadPlayers
+
+
+viewPlayerName : Player -> Html msg
+viewPlayerName player =
+    li []
+        [ text player.name
+        , ul []
+            [ li [] [ text <| "湧きポイント : " ++ player.popPosition ]
+            , li [] [ text <| "最終視認 : " ++ player.stopPosition ]
+            ]
         ]
 
 
@@ -268,9 +300,9 @@ viewSubmitButton addPlayer =
 viewForm : Model -> Html Msg
 viewForm model =
     div []
-        [ label [] [ text "Name: ", viewInputName "text" "Name: " model.addPlayer.name Name ]
-        , label [] [ text "Color: ", viewSelectColor Color ]
-        , viewSubmitButton model.addPlayer
+        [ p [] [ label [] [ text "Name: ", viewInputName "text" "Name: " model.addPlayer.name Name ] ]
+        , p [] [ label [] [ text "Color: ", viewSelectColor Color ] ]
+        , p [] [ viewSubmitButton model.addPlayer ]
         ]
 
 
