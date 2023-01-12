@@ -29,6 +29,21 @@ type Color
     = Red
     | Blue
     | Green
+    | Pink
+    | Orange
+    | Yellow
+    | Black
+    | White
+    | Purple
+    | Brown
+    | Cyan
+    | Lime
+    | Maroon
+    | Rose
+    | Banana
+    | Gray
+    | Tan
+    | Coral
     | NoMatch
 
 
@@ -43,6 +58,51 @@ colorToString color =
 
         Green ->
             "Green"
+
+        Pink ->
+            "Pink"
+
+        Orange ->
+            "Orange"
+
+        Yellow ->
+            "Yellow"
+
+        Black ->
+            "Black"
+
+        White ->
+            "White"
+
+        Purple ->
+            "Purple"
+
+        Brown ->
+            "Browun"
+
+        Cyan ->
+            "Cyan"
+
+        Lime ->
+            "Lime"
+
+        Maroon ->
+            "Maroon"
+
+        Rose ->
+            "Rose"
+
+        Banana ->
+            "Banana"
+
+        Gray ->
+            "Gray"
+
+        Tan ->
+            "Tan"
+
+        Coral ->
+            "Coral"
 
         NoMatch ->
             "NoMatch"
@@ -59,6 +119,51 @@ colorFromString string =
 
         "Green" ->
             Green
+
+        "Pink" ->
+            Pink
+
+        "Orange" ->
+            Orange
+
+        "Yellow" ->
+            Yellow
+
+        "Black" ->
+            Black
+
+        "White" ->
+            White
+
+        "Purple" ->
+            Purple
+
+        "Browun" ->
+            Brown
+
+        "Cyan" ->
+            Cyan
+
+        "Lime" ->
+            Lime
+
+        "Maroon" ->
+            Maroon
+
+        "Rose" ->
+            Rose
+
+        "Banana" ->
+            Banana
+
+        "Gray" ->
+            Gray
+
+        "Tan" ->
+            Tan
+
+        "Coral" ->
+            Coral
 
         _ ->
             NoMatch
@@ -103,6 +208,7 @@ type Msg
     | PopPosition Player Position
     | StopPosition Player Position
     | Dead Player Bool
+    | Undo
 
 
 type alias Position =
@@ -161,6 +267,14 @@ update msg model =
 
         Dead player bool ->
             { model | playerList = updateDead player bool model.playerList }
+
+        Undo ->
+            let
+                len : Int
+                len =
+                    List.length model.playerList
+            in
+            { model | playerList = List.take (len - 1) model.playerList }
 
 
 updatePopPosition : Player -> Position -> List Player -> List Player
@@ -227,7 +341,26 @@ viewDebugLog model =
 
 items : List Color
 items =
-    [ Red, Blue, Green ]
+    [ Red
+    , Blue
+    , Green
+    , Pink
+    , Orange
+    , Yellow
+    , Black
+    , White
+    , Purple
+    , Brown
+    , Cyan
+    , Lime
+    , Maroon
+    , Rose
+    , Banana
+    , Gray
+    , Tan
+    , Coral
+    , NoMatch
+    ]
 
 
 viewBuild : Model -> Html Msg
@@ -303,6 +436,7 @@ viewForm model =
         [ p [] [ label [] [ text "Name: ", viewInputName "text" "Name: " model.addPlayer.name Name ] ]
         , p [] [ label [] [ text "Color: ", viewSelectColor Color ] ]
         , p [] [ viewSubmitButton model.addPlayer ]
+        , p [] [ viewUndoButton model ]
         ]
 
 
@@ -314,6 +448,21 @@ viewSelectOption list =
 viewSelectColor : (Color -> Msg) -> Html Msg
 viewSelectColor toMsg =
     select [ onInput (colorFromString >> toMsg) ] (viewSelectOption items)
+
+
+viewUndoButton : Model -> Html Msg
+viewUndoButton model =
+    let
+        undoButtonDisabled : List (Attribute Msg)
+        undoButtonDisabled =
+            case List.length model.playerList of
+                0 ->
+                    [ disabled True ]
+
+                _ ->
+                    [ onClick Undo ]
+    in
+    button undoButtonDisabled [ text "Undo" ]
 
 
 
