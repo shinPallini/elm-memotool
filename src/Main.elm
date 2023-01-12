@@ -5,8 +5,8 @@ module Main exposing (main)
 
 import Browser
 import Debug
-import Html exposing (Attribute, Html, button, div, input, label, option, select, table, td, text, th, thead, tr)
-import Html.Attributes exposing (disabled, placeholder, style, type_, value)
+import Html exposing (Attribute, Html, button, datalist, div, input, label, option, select, table, td, text, th, thead, tr)
+import Html.Attributes exposing (disabled, id, list, placeholder, style, type_, value)
 import Html.Events exposing (onClick, onInput)
 import List
 import MySvg exposing (roundRect)
@@ -269,7 +269,10 @@ viewSelectColor toMsg =
 
 viewPlayerTable : Model -> Html Msg
 viewPlayerTable model =
-    playerTable model
+    div []
+        [ playerTable model
+        , positionDataList
+        ]
 
 
 playerTable : Model -> Html Msg
@@ -302,10 +305,40 @@ convertRow player =
     tr []
         [ td [] [ text player.name ]
         , td [] [ text (colorToString player.color) ]
-        , td [] [ input [ onInput (PopPosition player) ] [] ]
-        , td [] [ input [ onInput (StopPosition player) ] [] ]
+        , td [] [ input [ list "airship", onInput (PopPosition player) ] [] ]
+        , td [] [ input [ list "airship", onInput (StopPosition player) ] [] ]
         ]
 
 
+airship : List String
+airship =
+    [ "ミーティング"
+    , "宿舎前"
+    , "金庫室"
+    , "昇降機"
+    , "エンジンルーム"
+    , "コミュニケーション"
+    , "コックピット"
+    , "武器庫"
+    , "キッチン"
+    , "展望デッキ(キッチン)"
+    , "メインルーム"
+    , "セキュリティ"
+    , "展望デッキ(セキュリティ)"
+    , "電気室"
+    , "シャワー室"
+    , "アーカイブ"
+    , "ラウンジ"
+    , "貨物室"
+    , "バイタル"
+    ]
 
--- positionInputForm : Html Msg
+
+positionDataList : Html msg
+positionDataList =
+    datalist [ id "airship" ] (airshipOption airship)
+
+
+airshipOption : List String -> List (Html msg)
+airshipOption list =
+    List.map (\s -> option [] [ text s ]) list
