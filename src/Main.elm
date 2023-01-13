@@ -313,10 +313,38 @@ update msg model =
             { model | sceneArray = newSceneArray }
 
         NextScene ->
-            { model | currentSceneIndex = model.currentSceneIndex + 1 }
+            let
+                array_ =
+                    Array.get (model.currentSceneIndex + 1) model.sceneArray
+
+                nextScene =
+                    getCurrentScene model
+                        |> getAlivePlayers
+
+                newArray =
+                    Array.push nextScene model.sceneArray
+            in
+            case array_ of
+                Just _ ->
+                    { model
+                        | currentSceneIndex = model.currentSceneIndex + 1
+
+                        -- , sceneArray = Array.set (model.currentSceneIndex + 1) currentScene model.sceneArray
+                    }
+
+                Nothing ->
+                    { model
+                        | currentSceneIndex = model.currentSceneIndex + 1
+                        , sceneArray = newArray
+                    }
 
         PrevScene ->
             { model | currentSceneIndex = model.currentSceneIndex - 1 }
+
+
+getAlivePlayers : Scene -> Scene
+getAlivePlayers scene =
+    { scene | playerList = List.filter (.dead >> not) scene.playerList }
 
 
 
