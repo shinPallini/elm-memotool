@@ -3,9 +3,10 @@
 
 module Main exposing (main)
 
+import Array exposing (Array)
 import Browser
 import Debug
-import Html exposing (Attribute, Html, button, datalist, div, h1, h2, h3, hr, input, label, li, ol, option, p, select, table, td, text, th, thead, tr, ul)
+import Html exposing (Attribute, Html, button, datalist, div, h1, h2, h3, hr, input, label, li, ol, option, p, s, select, table, td, text, th, thead, tr, ul)
 import Html.Attributes exposing (disabled, id, list, placeholder, style, type_, value)
 import Html.Events exposing (onCheck, onClick, onInput)
 import List
@@ -178,9 +179,15 @@ type alias Player =
     }
 
 
+type alias Scene =
+    { playerList : List Player
+    }
+
+
 type alias Model =
     { addPlayer : Player
-    , playerList : List Player
+    , currentSceneIndex : Int
+    , sceneArray : Array Scene
     }
 
 
@@ -193,7 +200,12 @@ init =
         , popPosition = ""
         , stopPosition = ""
         }
-    , playerList = []
+    , currentSceneIndex = 0
+    , sceneArray =
+        Array.fromList
+            [ { playerList = []
+              }
+            ]
     }
 
 
@@ -205,7 +217,15 @@ type Msg
     = Name String
     | Color Color
     | Submit
-    | PopPosition Player Position
+    | SceneMsg Index SceneMsg
+
+
+type alias Index =
+    Int
+
+
+type SceneMsg
+    = PopPosition Player Position
     | StopPosition Player Position
     | Dead Player Bool
     | Undo
@@ -240,11 +260,26 @@ update msg model =
 
         Submit ->
             let
-                playerList =
-                    model.playerList
+                firstScene : Scene
+                firstScene =
+                    case Array.get 0 model.sceneArray of
+                        Just scene ->
+                            scene
 
+                        Nothing ->
+                            { playerList = [] }
+
+                playerList : List Player
+                playerList =
+                    firstScene.playerList
+
+                newPlayerList : List Player
                 newPlayerList =
-                    List.append playerList [ model.addPlayer ]
+                    model.addPlayer :: playerList
+
+                newSceneArray : Array Scene
+                newSceneArray =
+                    Array.set 0 { firstScene | playerList = newPlayerList } model.sceneArray
 
                 initAddPlayer =
                     { name = ""
@@ -256,25 +291,46 @@ update msg model =
             in
             { model
                 | addPlayer = initAddPlayer
-                , playerList = newPlayerList
+                , sceneArray = newSceneArray
             }
 
+        SceneMsg index sceneMsg ->
+            let
+                scene : Scene
+                scene =
+                    case Array.get index model.sceneArray of
+                        Just s ->
+                            s
+
+                        Nothing ->
+                            { playerList = [] }
+
+                newSceneArray : Array Scene
+                newSceneArray =
+                    Array.set index (updateScene sceneMsg scene) model.sceneArray
+            in
+            { model | sceneArray = newSceneArray }
+
+
+updateScene : SceneMsg -> Scene -> Scene
+updateScene msg scene =
+    case msg of
         PopPosition player position ->
-            { model | playerList = updatePopPosition player position model.playerList }
+            { scene | playerList = updatePopPosition player position scene.playerList }
 
         StopPosition player position ->
-            { model | playerList = updateStopPosition player position model.playerList }
+            { scene | playerList = updateStopPosition player position scene.playerList }
 
         Dead player bool ->
-            { model | playerList = updateDead player bool model.playerList }
+            { scene | playerList = updateDead player bool scene.playerList }
 
         Undo ->
             let
                 len : Int
                 len =
-                    List.length model.playerList
+                    List.length scene.playerList
             in
-            { model | playerList = List.take (len - 1) model.playerList }
+            { scene | playerList = List.take (len - 1) scene.playerList }
 
 
 updatePopPosition : Player -> Position -> List Player -> List Player
@@ -370,6 +426,15 @@ viewBuild model =
         , viewForm model
         , hr [] []
         , h2 [] [ text "盤面情報" ]
+        , viewCurrentScene model
+        ]
+
+
+viewCurrentScene : Model -> Html Msg
+viewCurrentScene model =
+    div []
+        [ viewSceneInfo model
+        , viewSceneChange model
         , h3 [] [ text "キルされたプレイヤー" ]
         , viewKilledPlayer model
         , h3 [] [ text "各プレイヤーの情報" ]
@@ -377,13 +442,49 @@ viewBuild model =
         ]
 
 
+viewSceneInfo : Model -> Html msg
+viewSceneInfo model =
+    h3 [] [ text <| "シーン" ++ (String.fromInt <| model.currentSceneIndex + 1) ]
+
+
+viewSceneChange : Model -> Html Msg
+viewSceneChange _ =
+    div []
+        [ button [] [ text "前のシーン" ]
+        , button [] [ text "次のシーン" ]
+        ]
+
+
 viewKilledPlayer : Model -> Html msg
 viewKilledPlayer model =
     let
+        scene =
+            getScene model.currentSceneIndex model.sceneArray
+
         deadPlayers =
-            List.filter .dead model.playerList
+            List.filter .dead scene.playerList
     in
     ol [] (List.map viewPlayerName deadPlayers)
+
+
+getCurrentScene : Model -> Scene
+getCurrentScene model =
+    case Array.get model.currentSceneIndex model.sceneArray of
+        Just scene ->
+            scene
+
+        Nothing ->
+            { playerList = [] }
+
+
+getScene : Index -> Array Scene -> Scene
+getScene index array =
+    case Array.get index array of
+        Just scene ->
+            scene
+
+        Nothing ->
+            { playerList = [] }
 
 
 
@@ -453,14 +554,17 @@ viewSelectColor toMsg =
 viewUndoButton : Model -> Html Msg
 viewUndoButton model =
     let
+        scene =
+            getScene 0 model.sceneArray
+
         undoButtonDisabled : List (Attribute Msg)
         undoButtonDisabled =
-            case List.length model.playerList of
+            case List.length scene.playerList of
                 0 ->
                     [ disabled True ]
 
                 _ ->
-                    [ onClick Undo ]
+                    [ onClick (SceneMsg 0 Undo) ]
     in
     button undoButtonDisabled [ text "Undo" ]
 
@@ -504,17 +608,21 @@ playerTable model =
 
 playerRow : Model -> List (Html Msg)
 playerRow model =
-    List.map convertRow model.playerList
+    let
+        scene =
+            getCurrentScene model
+    in
+    List.map (convertRow model.currentSceneIndex) scene.playerList
 
 
-convertRow : Player -> Html Msg
-convertRow player =
+convertRow : Index -> Player -> Html Msg
+convertRow index player =
     tr []
         [ td [] [ text player.name ]
         , td [] [ text (colorToString player.color) ]
-        , td [] [ input [ type_ "checkbox", onCheck <| Dead player ] [] ]
-        , td [] [ input [ list "pop_airship", onInput (PopPosition player) ] [] ]
-        , td [] [ input [ list "airship", onInput (StopPosition player) ] [] ]
+        , td [] [ input [ type_ "checkbox", onCheck <| SceneMsg index << Dead player ] [] ]
+        , td [] [ input [ list "pop_airship", onInput <| SceneMsg index << PopPosition player ] [] ]
+        , td [] [ input [ list "airship", onInput <| SceneMsg index << StopPosition player ] [] ]
         , td [] [ select [] suspectOption ]
         ]
 
