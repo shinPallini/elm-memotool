@@ -176,6 +176,7 @@ type alias Player =
     , dead : Bool
     , popPosition : String
     , stopPosition : String
+    , suspect : String
     }
 
 
@@ -193,19 +194,24 @@ type alias Model =
 
 init : Model
 init =
-    { addPlayer =
-        { name = ""
-        , color = Red
-        , dead = False
-        , popPosition = ""
-        , stopPosition = ""
-        }
+    { addPlayer = initAddPlayer
     , currentSceneIndex = 0
     , sceneArray =
         Array.fromList
             [ { playerList = []
               }
             ]
+    }
+
+
+initAddPlayer : Player
+initAddPlayer =
+    { name = ""
+    , color = Red
+    , dead = False
+    , popPosition = ""
+    , stopPosition = ""
+    , suspect = "可能な範囲"
     }
 
 
@@ -218,6 +224,8 @@ type Msg
     | Color Color
     | Submit
     | SceneMsg Index SceneMsg
+    | NextScene
+    | PrevScene
 
 
 type alias Index =
@@ -229,6 +237,7 @@ type SceneMsg
     | StopPosition Player Position
     | Dead Player Bool
     | Undo
+    | Suspect Player String
 
 
 type alias Position =
@@ -280,14 +289,6 @@ update msg model =
                 newSceneArray : Array Scene
                 newSceneArray =
                     Array.set 0 { firstScene | playerList = newPlayerList } model.sceneArray
-
-                initAddPlayer =
-                    { name = ""
-                    , color = Red
-                    , dead = False
-                    , popPosition = ""
-                    , stopPosition = ""
-                    }
             in
             { model
                 | addPlayer = initAddPlayer
@@ -311,6 +312,16 @@ update msg model =
             in
             { model | sceneArray = newSceneArray }
 
+        NextScene ->
+            { model | currentSceneIndex = model.currentSceneIndex + 1 }
+
+        PrevScene ->
+            { model | currentSceneIndex = model.currentSceneIndex - 1 }
+
+
+
+-- updateNextScene :
+
 
 updateScene : SceneMsg -> Scene -> Scene
 updateScene msg scene =
@@ -331,6 +342,9 @@ updateScene msg scene =
                     List.length scene.playerList
             in
             { scene | playerList = List.take (len - 1) scene.playerList }
+
+        Suspect player suspect ->
+            { scene | playerList = updateSuspect player suspect scene.playerList }
 
 
 updatePopPosition : Player -> Position -> List Player -> List Player
@@ -370,6 +384,20 @@ updatePlayerDead : Player -> Bool -> Player -> Player
 updatePlayerDead changePlayer bool inputPlayer =
     if changePlayer.name == inputPlayer.name then
         { inputPlayer | dead = bool }
+
+    else
+        inputPlayer
+
+
+updateSuspect : Player -> String -> List Player -> List Player
+updateSuspect player suspect playerList =
+    List.map (updatePlayerSuspect player suspect) playerList
+
+
+updatePlayerSuspect : Player -> String -> Player -> Player
+updatePlayerSuspect changePlayer suspect inputPlayer =
+    if changePlayer.name == inputPlayer.name then
+        { inputPlayer | suspect = suspect }
 
     else
         inputPlayer
@@ -435,10 +463,13 @@ viewCurrentScene model =
     div []
         [ viewSceneInfo model
         , viewSceneChange model
+        , h3 [] [ text "入力欄" ]
+        , viewPlayerTable model
+        , hr [] []
         , h3 [] [ text "キルされたプレイヤー" ]
         , viewKilledPlayer model
         , h3 [] [ text "各プレイヤーの情報" ]
-        , viewPlayerTable model
+        , viewPlayerInfo model
         ]
 
 
@@ -448,11 +479,37 @@ viewSceneInfo model =
 
 
 viewSceneChange : Model -> Html Msg
-viewSceneChange _ =
+viewSceneChange model =
     div []
-        [ button [] [ text "前のシーン" ]
-        , button [] [ text "次のシーン" ]
+        [ prevButton model "前のシーン"
+        , nextButton model "次のシーン"
         ]
+
+
+prevButton : Model -> String -> Html Msg
+prevButton model string =
+    let
+        attr =
+            if model.currentSceneIndex <= 0 then
+                [ disabled True, onClick PrevScene ]
+
+            else
+                [ onClick PrevScene ]
+    in
+    button attr [ text string ]
+
+
+nextButton : Model -> String -> Html Msg
+nextButton model string =
+    let
+        attr =
+            if model.currentSceneIndex >= 5 then
+                [ disabled True, onClick NextScene ]
+
+            else
+                [ onClick NextScene ]
+    in
+    button attr [ text string ]
 
 
 viewKilledPlayer : Model -> Html msg
@@ -505,6 +562,47 @@ viewPlayerName player =
 viewInputName : String -> String -> String -> (String -> Msg) -> Html Msg
 viewInputName t p v toMsg =
     input [ type_ t, placeholder p, value v, onInput toMsg ] []
+
+
+viewPlayerInfo : Model -> Html msg
+viewPlayerInfo model =
+    let
+        scene =
+            getScene model.currentSceneIndex model.sceneArray
+    in
+    div [] (wrapPlayerInfo scene)
+
+
+wrapPlayerInfo : Scene -> List (Html msg)
+wrapPlayerInfo scene =
+    List.map (playerInfo scene) suspectLabel
+
+
+playerInfo : Scene -> String -> Html msg
+playerInfo scene label =
+    let
+        suspectList =
+            List.filter (suspectCheck label) scene.playerList
+                |> playerNameList
+
+        ulList =
+            List.map (\s -> li [] [ text s ]) suspectList
+    in
+    div [] [ p [] [ text label ], ul [] ulList ]
+
+
+suspectCheck : String -> Player -> Bool
+suspectCheck label player =
+    if label == player.suspect then
+        True
+
+    else
+        False
+
+
+playerNameList : List Player -> List String
+playerNameList playerList =
+    List.map .name playerList
 
 
 createOption : Color -> Html msg
@@ -579,6 +677,7 @@ viewPlayerTable model =
         [ playerTable model
         , positionDataList
         , popPositionDataList
+        , suspectDataList
         ]
 
 
@@ -623,7 +722,7 @@ convertRow index player =
         , td [] [ input [ type_ "checkbox", onCheck <| SceneMsg index << Dead player ] [] ]
         , td [] [ input [ list "pop_airship", onInput <| SceneMsg index << PopPosition player ] [] ]
         , td [] [ input [ list "airship", onInput <| SceneMsg index << StopPosition player ] [] ]
-        , td [] [ select [] suspectOption ]
+        , td [] [ select [ onInput <| SceneMsg index << Suspect player ] suspectOption ]
         ]
 
 
@@ -677,11 +776,16 @@ airshipOption list =
     List.map (\s -> option [] [ text s ]) list
 
 
+suspectDataList : Html msg
+suspectDataList =
+    datalist [ id "suspect" ] suspectOption
+
+
+suspectLabel : List String
+suspectLabel =
+    [ "可能な範囲", "確白", "容疑者", "ライン" ]
+
+
 suspectOption : List (Html msg)
 suspectOption =
-    let
-        list : List Int
-        list =
-            [ 0, 1, 2, 3 ]
-    in
-    List.map (\n -> option [] [ text <| String.fromInt n ]) list
+    List.map (\n -> option [] [ text n ]) suspectLabel
